@@ -105,7 +105,9 @@ public class RepositoriesImpl extends Repositories {
 	public Response getRepositoryList() {
 		FindIterable<Document> iter = repositoriesCollection.find();
 		iter.projection(new Document("orgidentifier", 1).append(
-				"repositoryURL", 1).append("_id", 0));
+				"repositoryURL", 1).append(
+						"repositoryName", 1).append(
+								"lastUpdate", 1).append("_id", 0));
 		MongoCursor<Document> cursor = iter.iterator();
 		JSONArray array = new JSONArray();
 		while (cursor.hasNext()) {
@@ -167,7 +169,7 @@ public class RepositoriesImpl extends Repositories {
 		publicationsCollection = db.getCollection("researchobjects");
 		FindIterable<Document> iter = publicationsCollection.find(new Document(
 				"Repository", id));
-		iter.projection(new Document("Aggregation.Identifier", 1)
+		iter.projection(new Document("Aggregation.Identifier", 1).append("Aggregation.Title", 1)
 				.append("Repository", 1).append("Status", 1).append("_id", 0));
 		MongoCursor<Document> cursor = iter.iterator();
 		Set<Document> array = new HashSet<Document>();
