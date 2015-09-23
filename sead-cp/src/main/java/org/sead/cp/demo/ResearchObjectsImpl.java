@@ -173,7 +173,7 @@ public class ResearchObjectsImpl extends ResearchObjects {
 							DateFormat.getDateTimeInstance().format(
 									new Date(System.currentTimeMillis())))
 					.add("reporter", "SEAD-CP")
-					.add("stage", "Receipt Ackowledged")
+					.add("stage", "Receipt Acknowledged")
 					.add("message",
 							"request recorded and processing will begin").get();
 			statusreports.add(status);
