@@ -37,7 +37,7 @@ public class OrganizationMatcher implements Matcher {
 
 	@SuppressWarnings("unchecked")
 	public RuleResult runRule(Document aggregation, BasicBSONList affiliations,
-			Document preferences, Document statsDocument, Document profile) {
+			Document preferences, Document statsDocument, Document profile, Object context) {
 		RuleResult result = new RuleResult();
 		try {
 			// Get required affiliations from profile
@@ -60,7 +60,7 @@ public class OrganizationMatcher implements Matcher {
 				Iterator<String> iter = requiredAffiliations.iterator();
 				sBuilder.append((String) iter.next());
 				while (iter.hasNext()) {
-					sBuilder.append(", " + (String) iter.next());
+					sBuilder.append(", ").append((String) iter.next());
 				}
 				result.setResult(-1,
 						"Collection does not have an affiliation with a required organization ("

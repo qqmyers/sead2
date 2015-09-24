@@ -41,7 +41,7 @@ import com.sun.jersey.api.client.WebResource;
 public class DataTypeMatcher implements Matcher {
 
 	public RuleResult runRule(Document aggregation, BasicBSONList affiliations,
-			Document preferences, Document statsDocument, Document profile) {
+			Document preferences, Document statsDocument, Document profile, Object context) {
 		RuleResult result = new RuleResult();
 		try {
 			@SuppressWarnings("unchecked")
@@ -61,7 +61,7 @@ public class DataTypeMatcher implements Matcher {
 				Iterator<String> iter = forbiddenTypes.iterator();
 				sBuilder.append(iter.next());
 				while (iter.hasNext()) {
-					sBuilder.append(", " + iter.next());
+					sBuilder.append(", ").append(iter.next());
 				}
 				result.setResult(-1, "Collection contains forbidden types ("
 						+ sBuilder.toString() + ").");

@@ -20,17 +20,74 @@
  */
 package org.sead.cp.demo.matchers;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.xml.bind.JAXBException;
+
 import org.bson.Document;
 import org.bson.types.BasicBSONList;
 import org.sead.cp.demo.Matcher;
 import org.sead.cp.demo.RuleResult;
+import org.xml.sax.SAXException;
+
+import com.sun.xml.bind.CycleRecoverable.Context;
+import com.sun.xml.bind.v2.runtime.reflect.ListIterator;
 
 public class MinimalMetadataMatcher implements Matcher {
 
 	public RuleResult runRule(Document aggregation, BasicBSONList affiliations,
-			Document preferences, Document statsDocument, Document profile) {
+			Document preferences, Document statsDocument, Document profile,
+			Object context) {
+		RuleResult result = new RuleResult();
+		ArrayList preds = (ArrayList) profile.get("Metadata Terms");
+		if (preds == null) {
+			return result;
+		}
+		// Create map to look for metadata
+		HashMap<String, String> labelsByPred = new HashMap<String, String>();
+		if (context == null) {
+			return result;
+		}
+		if (context instanceof List) {
+			Iterator<Document> docIter = (Iterator<Document>) ((List) context)
+					.listIterator();
+			while (docIter.hasNext()) {
+				Object next = docIter.next();
+				if (next instanceof Document) {
+					Document doc = (Document) next;
+					for (String k : doc.keySet()) {
+						labelsByPred.put(doc.getString(k), k);
+					}
+				}
+			}
+		} else if (context instanceof Document) {
+			Document doc = (Document) context;
+			for (String k : doc.keySet()) {
+				labelsByPred.put(doc.getString(k), k);
+			}
+		}
+		StringBuffer missing = new StringBuffer();
+		for (int i = 0; i < preds.size(); i++) {
+			String label = labelsByPred.get(preds.get(i));
+			// No label for pred or no value for that label == missing
+			if ((label == null) || (aggregation.get(label) == null)) {
+				if (missing.length() != 0) {
+					missing.append(", ");
+				}
+				missing.append(preds.get(i));
+			}
+		}
+		if (missing.length() == 0) {
+			result.setResult(1, "All required metadata exists");
+		} else {
+			result.setResult(-1,
+					"Required metadata is missing: " + missing.toString());
+		}
 
-		return new RuleResult();
+		return result;
 	}
 
 	public String getName() {
@@ -42,7 +99,7 @@ public class MinimalMetadataMatcher implements Matcher {
 				.append("Repository Trigger",
 						" \"Metadata Terms\": \"http://sead-data.net/terms/terms\" : JSON array of String predicates, Not yet implemented")
 				.append("Publication Trigger",
-						" \"Metadata Terms\": \"http://sead-data.net/terms/terms\" : JSON array of String predicates in \"Aggregation Statistics\": \"http://sead-data.net/terms/publicationstatistics\", in publication request, Not yet implemented");
+						" Predicates matching repository profile : existence of predicates in \"Aggregation\" in publication request");
 	}
 
 }
