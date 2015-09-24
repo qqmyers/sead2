@@ -23,6 +23,7 @@ package org.sead.cp.demo;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -34,11 +35,16 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 
+import org.bson.BSONObject;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.json.JSONArray;
 import org.sead.cp.People;
+
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
@@ -59,21 +65,18 @@ import com.sun.jersey.api.client.ClientResponse.Status;
 
 @Path("/people")
 public class PeopleImpl extends People {
-	private MongoClient mongoClient = null;
 	private MongoDatabase db = null;
 	private MongoCollection<Document> peopleCollection = null;
 	private CacheControl control = new CacheControl();
-	
 
 	public PeopleImpl() {
-		mongoClient = new MongoClient();
-		db = mongoClient.getDatabase("seadcp");
+		db = MongoDB.getServicesDB();
 
-		peopleCollection = db.getCollection("people");
-		
+		peopleCollection = db.getCollection(MongoDB.people);
+
 		control.setNoCache(true);
 	}
-	
+
 	@POST
 	@Path("/")
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -111,7 +114,11 @@ public class PeopleImpl extends People {
 				return Response.created(resource)
 						.entity(new Document("identifier", newID)).build();
 			} else {
-				return Response.status(Status.BAD_REQUEST).entity(new BasicDBObject("Failure", "Provider " + person.get("provider") + " not supported")).build();
+				return Response
+						.status(Status.BAD_REQUEST)
+						.entity(new BasicDBObject("Failure", "Provider "
+								+ person.get("provider") + " not supported"))
+						.build();
 			}
 		}
 	}
@@ -121,16 +128,88 @@ public class PeopleImpl extends People {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getPeopleList() {
 		FindIterable<Document> iter = peopleCollection.find();
-		iter.projection(new Document("orcid-profile.orcid-identifier.path", 1).append(
-				"orcid-profile.orcid-bio.personal-details.given-names", 1).append("orcid-profile.orcid-bio.personal-details.family-name", 1).append("_id", 0));
+		iter.projection(getOrcidPersonProjection());
+
 		MongoCursor<Document> cursor = iter.iterator();
-		JSONArray array = new JSONArray();
+		ArrayList<Object> array = new ArrayList<Object>();
 		while (cursor.hasNext()) {
 			Document next = cursor.next();
-			array.put(JSON.parse(next.toJson()));
+			array.add(getPersonInfo(next));
 		}
-		return Response.ok(array.toString()).cacheControl(control).build();
+		Document peopleDocument = new Document();
+		peopleDocument.put("persons", array);
+		peopleDocument.put("@context", getPersonContext());
+		return Response.ok(peopleDocument.toJson()).cacheControl(control)
+				.build();
 
+	}
+
+	private Document getPersonInfo(Document next) {
+		Document standardForm = new Document();
+		standardForm.put("@id",	((Document) ((Document) next.get("orcid-profile"))
+								.get("orcid-identifier")).get("path"));
+		Document detailsDocument = (Document) ((Document) ((Document) next
+				.get("orcid-profile")).get("orcid-bio"))
+				.get("personal-details");
+		standardForm.put("givenName",
+				((Document) detailsDocument.get("given-names")).get("value"));
+		standardForm.put("familyName",
+				((Document) detailsDocument.get("family-name")).get("value"));
+		ArrayList emails = ((ArrayList<?>) ((Document) ((Document) ((Document) next
+				.get("orcid-profile")).get("orcid-bio"))
+				.get("contact-details")).get("email"));
+		if(!emails.isEmpty()) {
+		standardForm
+				.put("email",
+						((Document) emails.get(0))
+								.get("value"));
+		}
+		standardForm.put("PersonalProfileDocument",
+				((Document) ((Document) next.get("orcid-profile"))
+						.get("orcid-identifier")).get("uri"));
+		@SuppressWarnings("unchecked")
+		ArrayList<Document> affiliationsList = (ArrayList<Document>) ((Document) ((Document) ((Document) next
+				.get("orcid-profile")).get("orcid-activities"))
+				.get("affiliations")).get("affiliation");
+		StringBuffer affs = new StringBuffer();
+		for (Document affiliationDocument : affiliationsList) {
+			if (affiliationDocument.getString("type").equals("EMPLOYMENT")
+					&& (affiliationDocument.get("end-date") == null)) {
+				if(affs.length()!=0) {
+					affs.append(", ");
+				}
+				affs.append(((Document) affiliationDocument.get("organization"))
+						.getString("name"));
+				
+			}
+			standardForm.append("affiliation",affs.toString());	
+		}
+		return standardForm;
+	}
+
+	private Document getOrcidPersonProjection() {
+		return new Document("orcid-profile.orcid-identifier.uri", 1)
+				.append("orcid-profile.orcid-identifier.path", 1)
+				.append("orcid-profile.orcid-bio.personal-details.given-names",
+						1)
+				.append("orcid-profile.orcid-bio.personal-details.family-name",
+						1)
+				.append("orcid-profile.orcid-bio.contact-details.email", 1)
+				.append("orcid-profile.orcid-activities.affiliations.affiliation",
+						1).append("_id", 0);
+	}
+
+	private Document getPersonContext() {
+		Document contextDocument = new Document();
+		contextDocument.put("givenName", "http://schema.org/Person/givenName");
+		contextDocument
+				.put("familyName", "http://schema.org/Person/familyName");
+		contextDocument.put("email", "http://schema.org/Person/email");
+		contextDocument.put("affiliation",
+				"http://schema.org/Person/affiliation");
+		contextDocument.put("PersonalProfileDocument",
+				"http://schema.org/Thing/mainEntityOfPage");
+		return contextDocument;
 	}
 
 	@GET
@@ -139,10 +218,22 @@ public class PeopleImpl extends People {
 	public Response getPersonProfile(@PathParam("id") String id) {
 		FindIterable<Document> iter = peopleCollection.find(new Document(
 				"orcid-profile.orcid-identifier.path", id));
-		
+		iter.projection(getOrcidPersonProjection());
+
+		Document document = getPersonInfo(iter.first());
+		document.put("@context", getPersonContext());
+		return Response.ok(document.toJson()).cacheControl(control).build();
+	}
 	
+	@GET
+	@Path("/{id}/raw")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getRawPersonProfile(@PathParam("id") String id) {
+		FindIterable<Document> iter = peopleCollection.find(new Document(
+				"orcid-profile.orcid-identifier.path", id));
+		
+
 		Document document = iter.first();
-		document.remove("_id");
 		return Response.ok(document.toJson()).cacheControl(control).build();
 	}
 
@@ -164,10 +255,10 @@ public class PeopleImpl extends People {
 								"Provider call failed with status: "
 										+ r.getMessage())).build();
 			}
-		
-			
+
 			UpdateResult ur = peopleCollection.replaceOne(new Document(
-					"orcid-profile.orcid-identifier.path", id), Document.parse(profile));
+					"orcid-profile.orcid-identifier.path", id), Document
+					.parse(profile));
 			return Response.status(Status.OK).build();
 
 		} else {
@@ -179,11 +270,10 @@ public class PeopleImpl extends People {
 	@DELETE
 	@Path("/{id}")
 	public Response unregisterPerson(@PathParam("id") String id) {
-		peopleCollection.deleteOne(new Document("orcid-profile.orcid-identifier.path", id));
+		peopleCollection.deleteOne(new Document(
+				"orcid-profile.orcid-identifier.path", id));
 		return Response.status(Status.OK).build();
 	}
-
-
 
 	private String getOrcidProfile(String id) {
 

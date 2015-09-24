@@ -23,6 +23,7 @@ package org.sead.cp.demo;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -59,16 +60,14 @@ import com.sun.jersey.api.client.ClientResponse.Status;
 
 @Path("/repositories")
 public class RepositoriesImpl extends Repositories {
-	private MongoClient mongoClient = null;
 	private MongoDatabase db = null;
 	private MongoCollection<Document> repositoriesCollection = null;
 	private CacheControl control = new CacheControl();
 
 	public RepositoriesImpl() {
-		mongoClient = new MongoClient();
-		db = mongoClient.getDatabase("seadcp");
+		db = MongoDB.getServicesDB();
 
-		repositoriesCollection = db.getCollection("repositories");
+		repositoriesCollection = db.getCollection(MongoDB.repositories);
 
 		control.setNoCache(true);
 	}
@@ -171,6 +170,8 @@ public class RepositoriesImpl extends Repositories {
 				"Repository", id));
 		iter.projection(new Document("Aggregation.Identifier", 1).append("Aggregation.Title", 1)
 				.append("Repository", 1).append("Status", 1).append("_id", 0));
+		
+		
 		MongoCursor<Document> cursor = iter.iterator();
 		Set<Document> array = new HashSet<Document>();
 		while (cursor.hasNext()) {

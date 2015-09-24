@@ -62,7 +62,6 @@ import org.sead.cp.demo.matchers.OrganizationMatcher;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -82,21 +81,22 @@ import com.sun.jersey.api.client.WebResource;
 
 @Path("/researchobjects")
 public class ResearchObjectsImpl extends ResearchObjects {
-	private MongoClient mongoClient = null;
 	private MongoDatabase db = null;
 	private MongoCollection<Document> publicationsCollection = null;
 	private MongoCollection<Document> peopleCollection = null;
 	private MongoCollection<Document> oreMapCollection = null;
+	private MongoCollection<Document> repositoriesCollection = null;
 	private CacheControl control = new CacheControl();
 	Set<Matcher> matchers = new HashSet<Matcher>();
 
 	public ResearchObjectsImpl() {
-		mongoClient = new MongoClient();
-		db = mongoClient.getDatabase("seadcp");
+		
+		db = MongoDB.getServicesDB();
 
-		publicationsCollection = db.getCollection("researchobjects");
-		peopleCollection = db.getCollection("people");
-		oreMapCollection = db.getCollection("oreMaps");
+		publicationsCollection = db.getCollection(MongoDB.researchobjects);
+		peopleCollection = db.getCollection(MongoDB.people);
+		oreMapCollection = db.getCollection(MongoDB.oreMaps);
+		repositoriesCollection = db.getCollection(MongoDB.repositories);
 
 		// Build list of Matchers
 
@@ -110,6 +110,7 @@ public class ResearchObjectsImpl extends ResearchObjects {
 		control.setNoCache(true);
 	}
 
+	@SuppressWarnings("unchecked")
 	@POST
 	@Path("/")
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -126,10 +127,17 @@ public class ResearchObjectsImpl extends ResearchObjects {
 		if (preferences == null) {
 			messageString += "Missing Preferences";
 		}
-		Object repository = request.get("Repository");
+		String repository = request.getString("Repository");
 		if (repository == null) {
 			messageString += "Missing Respository";
+		} else {
+			FindIterable<Document> iter = repositoriesCollection.find(new Document("orgidentifier", repository));
+			if(iter.first()==null) {
+				messageString += "Unknown Repository: " + repository;
+			}
+			
 		}
+		
 		Document stats = (Document) request.get("Aggregation Statistics");
 		if (stats == null) {
 			messageString += "Missing Statistics";
@@ -142,11 +150,7 @@ public class ResearchObjectsImpl extends ResearchObjects {
 			BasicBSONList affiliations = new BasicBSONList();
 			if (creatorObject != null) {
 				if (creatorObject instanceof ArrayList) {
-					Iterator<String> iter = ((ArrayList<String>) creatorObject)
-							.iterator();
-
-					while (iter.hasNext()) {
-						String creator = iter.next();
+					for(String creator: ((ArrayList<String>) creatorObject)) {
 						Set<String> orgs = getOrganizationforPerson(creator);
 						if (!orgs.isEmpty()) {
 							affiliations.addAll(orgs);
@@ -267,7 +271,7 @@ public class ResearchObjectsImpl extends ResearchObjects {
 		if (document == null) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		//Internal meaning only - strip from exported doc
+		// Internal meaning only - strip from exported doc
 		document.remove("_id");
 		Document aggDocument = (Document) document.get("Aggregation");
 		aggDocument.remove("authoratativeMap");
@@ -316,26 +320,29 @@ public class ResearchObjectsImpl extends ResearchObjects {
 	@DELETE
 	@Path("/{id}")
 	public Response rescindROPublicationRequest(@PathParam("id") String id) {
-		//Is there ever a reason to preserve the map and not the pub request?
-		//FixMe: Don't allow a delete after the request is complete?
-		
-		//First remove map
+		// Is there ever a reason to preserve the map and not the pub request?
+		// FixMe: Don't allow a delete after the request is complete?
+
+		// First remove map
 		FindIterable<Document> iter = publicationsCollection.find(new Document(
 				"Aggregation.Identifier", id));
 		iter.projection(new Document("Aggregation", 1).append("_id", 0));
 
 		Document document = iter.first();
-		if(document==null) {
-			return Response.status(javax.ws.rs.core.Response.Status.NOT_FOUND).build();
+		if (document == null) {
+			return Response.status(javax.ws.rs.core.Response.Status.NOT_FOUND)
+					.build();
 		}
-		ObjectId mapId = (ObjectId) ((Document)document.get("Aggregation")).get("authoratativeMap");
-		
-		DeleteResult mapDeleteResult = oreMapCollection.deleteOne(new Document("_id", mapId));
+		ObjectId mapId = (ObjectId) ((Document) document.get("Aggregation"))
+				.get("authoratativeMap");
+
+		DeleteResult mapDeleteResult = oreMapCollection.deleteOne(new Document(
+				"_id", mapId));
 		if (mapDeleteResult.getDeletedCount() != 1) {
-			//Report error
+			// Report error
 			System.out.println("Could not find map corresponding to " + id);
 		}
-		
+
 		DeleteResult dr = publicationsCollection.deleteOne(new Document(
 				"Aggregation.Identifier", id));
 		if (dr.getDeletedCount() == 1) {
@@ -412,6 +419,11 @@ public class ResearchObjectsImpl extends ResearchObjects {
 		if (stats == null) {
 			messageString += "Missing Statistics";
 		}
+		Object context = request.get("@context");
+		if (context == null) {
+			messageString += "Missing @context";
+		}
+		
 
 		if (messageString == null) {
 			// Get organization from profile(s)
@@ -458,6 +470,7 @@ public class ResearchObjectsImpl extends ResearchObjects {
 				Document profile = cursor.next();
 
 				repoMatch.put("orgidentifier", profile.get("orgidentifier"));
+				repoMatch.put("repositoryName", profile.get("repositoryName"));
 
 				BasicBSONList scores = new BasicBSONList();
 				int total = 0;
@@ -466,7 +479,7 @@ public class ResearchObjectsImpl extends ResearchObjects {
 					BasicBSONObject individualScore = new BasicBSONObject();
 
 					RuleResult result = m.runRule(content, affiliations,
-							preferences, stats, profile);
+							preferences, stats, profile, context);
 
 					individualScore.put("Rule Name", m.getName());
 					if (result.wasTriggered()) {
@@ -509,21 +522,24 @@ public class ResearchObjectsImpl extends ResearchObjects {
 	@GET
 	@Path("/{id}/oremap")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getROOREMap(@PathParam("id") String id) {;
+	public Response getROOREMap(@PathParam("id") String id) {
+		;
 
 		FindIterable<Document> iter = publicationsCollection.find(new Document(
 				"Aggregation.Identifier", id));
 		iter.projection(new Document("Aggregation", 1).append("_id", 0));
 
 		Document document = iter.first();
-		if(document==null) {
-			return Response.status(javax.ws.rs.core.Response.Status.NOT_FOUND).build();
+		if (document == null) {
+			return Response.status(javax.ws.rs.core.Response.Status.NOT_FOUND)
+					.build();
 		}
-		ObjectId mapId = (ObjectId) ((Document)document.get("Aggregation")).get("authoratativeMap");
-		
+		ObjectId mapId = (ObjectId) ((Document) document.get("Aggregation"))
+				.get("authoratativeMap");
+
 		iter = oreMapCollection.find(new Document("_id", mapId));
 		Document map = iter.first();
-		//Internal meaning only
+		// Internal meaning only
 		map.remove("_id");
 		return Response.ok(map.toJson()).cacheControl(control).build();
 	}
