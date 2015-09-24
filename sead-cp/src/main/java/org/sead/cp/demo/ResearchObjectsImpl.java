@@ -26,6 +26,7 @@ import java.net.URISyntaxException;
 import java.sql.Date;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -151,7 +152,7 @@ public class ResearchObjectsImpl extends ResearchObjects {
 			if (creatorObject != null) {
 				if (creatorObject instanceof ArrayList) {
 					for(String creator: ((ArrayList<String>) creatorObject)) {
-						Set<String> orgs = getOrganizationforPerson(creator);
+						List<String> orgs = getOrganizationforPerson(creator);
 						if (!orgs.isEmpty()) {
 							affiliations.addAll(orgs);
 						}
@@ -159,7 +160,7 @@ public class ResearchObjectsImpl extends ResearchObjects {
 
 				} else {
 					// BasicDBObject - single value
-					Set<String> orgs = getOrganizationforPerson((String) creatorObject);
+					List<String> orgs = getOrganizationforPerson((String) creatorObject);
 					if (!orgs.isEmpty()) {
 						affiliations.addAll(orgs);
 					}
@@ -352,52 +353,37 @@ public class ResearchObjectsImpl extends ResearchObjects {
 		}
 	}
 
-	private Set<String> getOrganizationforPerson(String personID) {
-		Set<String> orgs = new HashSet<String>();
-		;
-		if (personID.startsWith("orcid.org/")) {
-			personID = personID.substring("orcid.org/".length());
-			FindIterable<Document> iter = peopleCollection.find(new Document(
+	private List<String> getOrganizationforPerson(String personID) {
+		
+		personID = getInternalId(personID);
+		FindIterable<Document> iter = peopleCollection.find(new Document(
+				"orcid-profile.orcid-identifier.path", personID));
+
+		// NeverFail
+		if (iter == null) {
+			new PeopleImpl().registerPerson(personID);
+			iter = peopleCollection.find(new Document(
 					"orcid-profile.orcid-identifier.path", personID));
-			// FixMe: NeverFail
-			if (iter == null) {
-				new PeopleImpl().registerPerson(personID);
-				iter = peopleCollection.find(new Document(
-						"orcid-profile.orcid-identifier.path", personID));
-			}
-
-			iter.projection(new Document(
-					"orcid-profile.orcid-activities.affiliations.affiliation.organization.name",
-					1).append("_id", 0));
-			MongoCursor<Document> cursor = iter.iterator();
-			if (cursor.hasNext()) {
-				Document affilDocument = cursor.next();
-				Document profile = (Document) affilDocument
-						.get("orcid-profile");
-
-				Document activitiesDocument = (Document) profile
-						.get("orcid-activities");
-
-				Document affiliationsDocument = (Document) activitiesDocument
-						.get("affiliations");
-
-				ArrayList orgList = (ArrayList) affiliationsDocument
-						.get("affiliation");
-				System.out.println(orgList.size());
-				for (Object entry : orgList) {
-					Document org = (Document) ((Document) entry)
-							.get("organization");
-					orgs.add((String) org.getString("name"));
-				}
-			}
-			/*
-			 * JSONArray array = new JSONArray(); while(cursor.hasNext()) {
-			 * array.put(JSON.parse(cursor.next().toJson())); }
-			 */
-
 		}
-		return orgs;
+		
+		iter.projection(PeopleImpl.getOrcidPersonProjection());
 
+		Document document = PeopleImpl.getPersonInfo(iter.first());
+		String currentAffiliations = document.getString("affiliation");
+		List<String> orgs = Arrays.asList(currentAffiliations.split("\\s*,\\s*"));
+				
+		return orgs;
+	}
+
+	private String getInternalId(String personID) {
+		//ORCID
+		if (personID.startsWith("orcid.org/")) {
+			return personID.substring("orcid.org/".length());
+		} else {
+			//Add other providers here
+			return personID;
+		}
+	
 	}
 
 	@POST
@@ -438,7 +424,7 @@ public class ResearchObjectsImpl extends ResearchObjects {
 
 				while (iter.hasNext()) {
 					String creator = iter.next();
-					Set<String> orgs = getOrganizationforPerson(creator);
+					List<String> orgs = getOrganizationforPerson(creator);
 					if (!orgs.isEmpty()) {
 						affiliations.addAll(orgs);
 					}
@@ -446,7 +432,7 @@ public class ResearchObjectsImpl extends ResearchObjects {
 
 			} else {
 				// BasicDBObject - single value
-				Set<String> orgs = getOrganizationforPerson((String) creatorObject);
+				List<String> orgs = getOrganizationforPerson((String) creatorObject);
 				if (!orgs.isEmpty()) {
 					affiliations.addAll(orgs);
 				}

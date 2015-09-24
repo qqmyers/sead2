@@ -144,7 +144,7 @@ public class PeopleImpl extends People {
 
 	}
 
-	private Document getPersonInfo(Document next) {
+	static protected Document getPersonInfo(Document next) {
 		Document standardForm = new Document();
 		standardForm.put("@id",	((Document) ((Document) next.get("orcid-profile"))
 								.get("orcid-identifier")).get("path"));
@@ -187,7 +187,7 @@ public class PeopleImpl extends People {
 		return standardForm;
 	}
 
-	private Document getOrcidPersonProjection() {
+	static protected Document getOrcidPersonProjection() {
 		return new Document("orcid-profile.orcid-identifier.uri", 1)
 				.append("orcid-profile.orcid-identifier.path", 1)
 				.append("orcid-profile.orcid-bio.personal-details.given-names",
@@ -199,7 +199,7 @@ public class PeopleImpl extends People {
 						1).append("_id", 0);
 	}
 
-	private Document getPersonContext() {
+	static private Document getPersonContext() {
 		Document contextDocument = new Document();
 		contextDocument.put("givenName", "http://schema.org/Person/givenName");
 		contextDocument
