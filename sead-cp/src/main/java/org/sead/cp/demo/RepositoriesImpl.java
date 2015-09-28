@@ -79,6 +79,9 @@ public class RepositoriesImpl extends Repositories {
 	public Response registerRepository(String profileString) {
 		BasicDBObject profile = (BasicDBObject) JSON.parse(profileString);
 		String newID = (String) profile.get("orgidentifier");
+		if(newID==null) {
+			return Response.status(Status.BAD_REQUEST).build();
+		}
 		FindIterable<Document> iter = repositoriesCollection.find(new Document(
 				"orgidentifier", newID));
 		if (iter.iterator().hasNext()) {
@@ -179,5 +182,15 @@ public class RepositoriesImpl extends Repositories {
 		}
 		return Response.ok(array).cacheControl(control).build();
 	};
+	
+	/**
+	 * Clean up : currently removes old test docs that would fail in the delete method (i.e. because they don't have an orgidentifier)
+	 */
+	@DELETE
+	@Path("/clean")
+	public Response cleanRepositories() {
+		repositoriesCollection.deleteMany(new Document("orgidentifier", null));
+		return Response.status(Status.OK).build();
+	}
 
 }
