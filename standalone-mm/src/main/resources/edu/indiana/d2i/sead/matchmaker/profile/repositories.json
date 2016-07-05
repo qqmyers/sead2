@@ -1,0 +1,96 @@
+[
+  {
+    "@context": [
+      "http://re3data.org/"
+    ],
+    "@type": "repository",
+    "orgidentifier": "String",
+    "repositoryName": "String",
+    "repositoryURL": "String",
+    "institution": "String",
+    "institutionType": "String",
+    "institutionURL": "String",
+    "institutionContact": "String",
+    "description": {
+      "langauge": "String",
+      "content": "String"
+    },
+    "repositoryContact": "String",
+    "missionStatementURL": "String",
+    "subject": "String",
+    "keyword": "String",
+    "versioning": "String",
+    "dataLicense": [
+      {
+        "dataLicenseName": "String",
+        "dataLicenseURL": "String"
+      }
+    ],
+    "dataUpload": [
+      {
+        "dataUploadType": "String",
+        "dataUploadRestriction": "String"
+      }
+    ],
+    "dataDepositAgreement": {
+      "dataDepositAgreementName": "String",
+      "dataDepositAgreementURL": "String"
+    },
+    "Data Mimetypes": [
+      "String"
+    ],
+    "metadataStandardName": "String",
+    "metadataStandardURL": "String",
+    "metadataFields": [
+      "String"
+    ],
+    "api": [
+      {
+        "URL": "String",
+        "apiType": "String"
+      }
+    ],
+    "Metadata Terms": [
+      "String"
+    ],
+    "Max Dataset Size": "String",
+    "Total Size": "String",
+    "Max Collection Depth": "String",
+    "Rights Holder IDs Required": true,
+    "pidSystem": "String",
+    "providerType": "String",
+    "entryDate": "String",
+    "lastUpdate": "String",
+    "size": "String",
+    "enhancedPublication": "yes/no",
+    "databaseAccess": {"databaseAccessType": "String"},
+    "additionalName": "String",
+    "repositoryLanguage": "String",
+    "dataAccess": [
+      {"dataAccessType": "String"},
+      {
+        "dataAccessRestriction": "String",
+        "dataAccessType": "String"
+      },
+      {
+        "dataAccessRestriction": "String",
+        "dataAccessType": "String"
+      },
+      {"dataAccessType": "String"}
+    ],
+    "dataAccessType": [
+      "String",
+      "String"
+    ],
+    "dataLicenseName": ["String"],
+    "Affiliations": [
+      "String",
+      "String"
+    ],
+    "motto": "String",
+    "maxProjectSpaceSize": {
+      "unit": "MB/GB/TB",
+      "value": 1
+    }
+  }
+]

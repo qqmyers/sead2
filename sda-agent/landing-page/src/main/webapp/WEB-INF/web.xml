@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://java.sun.com/xml/ns/javaee"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+         id="WebApp_ID" version="2.5">
+
+    <display-name>SDA Research Object Information</display-name>
+
+    <welcome-file-list>
+        <welcome-file>home.html</welcome-file>
+        <welcome-file>ro.jsp</welcome-file>
+    </welcome-file-list>
+
+    <servlet>
+        <servlet-name>sda-landing</servlet-name>
+        <servlet-class>org.sead.sda.LandingPage</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>sda-metadata</servlet-name>
+        <servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
+        <init-param>
+            <param-name>com.sun.jersey.config.property.packages</param-name>
+            <param-value>org.sead.sda;org.codehaus.jackson.jaxrs</param-value>
+        </init-param>
+        <init-param>
+            <param-name>com.sun.jersey.api.json.POJOMappingFeature</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>sda-landing</servlet-name>
+        <url-pattern>/sda/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>sda-metadata</servlet-name>
+        <url-pattern>/metadata/*</url-pattern>
+    </servlet-mapping>
+
+</web-app>

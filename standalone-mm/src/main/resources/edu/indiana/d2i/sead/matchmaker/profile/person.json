@@ -1,0 +1,16 @@
+[
+  {
+    "@id": "String",
+    "givenName": "String",
+    "familyName": "String",
+    "PersonalProfileDocument": "String",
+    "affiliation": "String",
+    "@context": {
+      "givenName": "NameSpaceString",
+      "familyName": "NameSpaceString",
+      "email": "NameSpaceString",
+      "affiliation": "NameSpaceString",
+      "PersonalProfileDocument": "NameSpaceString"
+    }
+  }
+]

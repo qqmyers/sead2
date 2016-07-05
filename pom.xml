@@ -1,6 +1,7 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.sead.va</groupId>
@@ -10,12 +11,19 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>services/sead-status-tracker</module>
+        <module>services/sead-monitoring</module>
         <module>va-workflow</module>
-        <module>ps-stub</module>
         <module>sead-doi-service</module>
-        <module>metadata-gen</module>
-        <module>ro-subsystem</module>
-        <module>sead-registry</module>
-    </modules>
+        <module>sead-nds-repository</module>
+        <module>sda-agent</module>
+        <module>metadata-gen</module> 
+        <module>sead-matchmaker</module>
+        <module>sead-pdt</module>
+        <module>sead-api</module>
+        <module>sead-dataone</module>
+        <module>services/dataone-api</module>
+        <module>iu-sead-cloud-search</module>
+  </modules>
 
 </project>

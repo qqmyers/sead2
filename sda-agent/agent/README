@@ -1,0 +1,32 @@
+Please build LandingPage first. 
+
+
+Step 1:
+
+Modify sead2/sda-agent/config/config.properties file
+
+need to get correct information for sftp.host, sftp.user, sftp.pass, collection.user and
+collection.pass
+
+write a proper path for 'dummy.sda' that could save the temporary RO files
+
+change 'landing.page.url' to the correct http address
+
+if you don't want to use SDA, you can create a local SDA folder and change ‘SDA’ path.
+
+
+Step 2:
+
+run build-standalone.sh.
+
+./build-standalone.sh.
+
+It will help user build project and create a shell script bin/SDA_Agent.sh
+
+
+Step 3:
+
+Run bin/SDA_Agent.sh to start SDA Agent. You have to provide the 'config.properties' file path as a parameter.
+
+nohup ./bin/SDA_Agent.sh config/config.properties > log.txt &
+

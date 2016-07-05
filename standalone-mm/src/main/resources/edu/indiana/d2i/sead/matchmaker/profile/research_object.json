@@ -1,0 +1,32 @@
+{
+  "@context": [
+    "https://w3id.org/ore/context"
+  ],
+  "Rights Holder": "String",
+  "Aggregation": {
+    "Uploaded By": "String",
+    "Title": "String",
+    "Creation Date": "String",
+    "similarTo": "String",
+    "Creator": ["String"],
+    "Abstract": ["String"],
+    "Identifier": "String",
+    "Publishing Project": "String",
+    "@id": "String"
+  },
+  "Preferences": {
+    "Purpose": "String",
+    "Repository": null
+  },
+  "Aggregation Statistics": {
+    "Data Mimetypes": [
+      "String",
+      "String"
+    ],
+    "Number of Datasets": 1,
+    "Number of Collections": 1,
+    "Max Dataset Size": "String",
+    "Total Size": "String",
+    "Max Collection Depth": "String"
+  }
+}

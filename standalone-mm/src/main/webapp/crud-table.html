@@ -1,0 +1,108 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <link href="css/crud_table.css" rel="stylesheet" />
+    <link rel="stylesheet" href="css/jquery_ui.css">
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/json2.js"></script>
+    <script type="text/javascript" src="js/jquery.tmpl.js"></script>
+    <script type="text/javascript" src="js/crud_table.js"></script>
+    <script type="text/javascript" src="js/jquery_ui.js"></script>
+    <script>
+  $(function() {
+    $( "#tabs" ).tabs();
+  });
+  </script>
+</head>
+<body>
+
+<div class="container" style="margin:30px">
+    <h1>Match Maker Rules Management Admin UI</h1>
+    <div style="height:20px;">&nbsp;</div>
+
+    <div id="tabs">
+        <div>
+            <ul>
+                <li><a href="#tabs-1">Rules Table</a></li>
+                <li><a href="#tabs-2">Enum Table</a></li>
+            </ul>
+        </div>
+        <div id="tabs-1">
+            <div style="margin-top:20px"><span id="add_button" name="add" title="add" class="ui-icon ui-icon-pencil AddRow" style="cursor:pointer">Add New Rule</span></div>
+            <div style="height:10px;">&nbsp;</div>
+            <table id="CRUDthisTable" class="mediumTable">
+                <thead>
+
+                <tr class="rowHeader">
+                    <th>Manage</th>
+                    <th>Rule Name </th>
+                    <th>LHS Full</th>
+                    <th>RHS </th>
+                    <th>Description </th>
+                </tr>
+
+                </thead>
+                <tbody>
+                </tbody>
+                <tfoot>
+
+                </tfoot>
+            </table>
+            <h1 style="padding-top:40px;">Match Maker Comparision</h1>
+            <div id="error"></div>
+            <div id="success"></div>
+            <div width="100%">
+                <div style="float:left">
+                    <h2><br/>Match Maker</h2>
+                    <form enctype="application/json" id="form">
+                        <textarea name="content" style="height:400px;width:450px;" id="inputText" placeholder="PUT YOUR JSON CODE HERE"></textarea>
+                        <br>
+                        <input id="match" type="submit" name="submit" value="Match" />
+                    </form>
+                </div>
+                <div style="float:left" class="vertical_line"></div>
+                <div style="float:left">
+                    <h2><br/>Response Code</h2>
+                    <textarea style="height:400px;width:450px;" id="match_response" placeholder="MATCH MAKER RESPONSE DETAIL"></textarea>
+                </div>
+            </div>
+        </div>
+        <div id="tabs-2">
+            <div id="enum" style="margin-top:20px"></div>
+        </div>
+    </div>
+</div>
+
+<script id="editRowTemplate" type="text/x-jquery-tmpl">
+        <tr class="editRow">
+            <td class="manage">
+                <span id="cancel" name="cancel" tooltip="Cancel" class="ui-icon ui-icon-close CancelRow" style="cursor:pointer">Cancel</span>
+                <span id="save" name="save" tooltip="Save" class="ui-icon ui-icon-disk SaveRow" style="cursor:pointer">Save</span>
+            </td>
+
+            <td>
+				<textarea id="field1" name="field1" class="ruleName" rows="3" style="color:#1596B9;">{{html RuleName}}</textarea></td>
+			<td>
+                <textarea id="field2" name="field2" class="lhsFull" rows="6" style="color:#A0522D">{{html LHSFULL}}</textarea></td>
+            <td>
+                <textarea id="field3" name="field3" class="rhs" rows="6" style="color:#24AD24">{{html RHS}}</textarea></td>
+            <td>
+                <textarea id="field4" name="field4" class="desc" rows="6" style="color:#000000;">{{html DESC}}</textarea></td>
+        </tr>
+    </script>
+<script id="viewRowTemplate" type="text/x-jquery-tmpl">
+
+		<tr>
+            <td class="manage"><span id="edit" name="edit" title="Edit" class="ui-icon ui-icon-pencil EditRow" style="cursor:pointer">Edit</span>
+            <span id="delete" name="delete" title="Delete" class="ui-icon ui-icon-trash DeleteRow" style="cursor:pointer">Delete</span>
+			</td>
+
+            <td class="view_ruleName" style="color:#1596B9;">{{html RuleName}}</td>
+			<td class="view_lhsfull">{{html LHSFULL}}</td>
+            <td class="view_rhs" style="color:#000000;">{{html RHS}}</td>
+            <td class="view_desc" style="color:#000000;">{{html DESC}}</td>
+        </tr>
+    </script>
+</body>
+</html>

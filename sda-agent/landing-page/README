@@ -1,0 +1,21 @@
+Step 1:
+
+Build the landing-page webapp
+
+mvn clean install
+
+
+Step 2:
+
+copy target/landing-page.war file into tomcat/webapps directory.
+
+
+Step 3:
+
+Set configuration parameters in landing-page/WEB-INF/classes/org/sead/sda/config.properties file
+
+
+Step 4:
+
+start Tomcat
+

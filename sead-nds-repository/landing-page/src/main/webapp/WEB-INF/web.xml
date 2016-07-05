@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/javaee"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	id="WebApp_ID" version="2.5">
+
+	<display-name>SEAD Reference Repository</display-name>
+
+   <!-- Listener needed for Tomcat6/servlets 2.5>
+   <  -->
+   <listener>
+        <listener-class>
+             org.sead.repositories.reference.RepoContextListener
+        </listener-class>
+   </listener>
+
+  <servlet>
+    <servlet-name>Log4JInitServlet</servlet-name>
+    <servlet-class>org.sead.repositories.reference.util.Log4JInitServlet</servlet-class>
+    <init-param>
+      <param-name>log4j-properties-location</param-name>
+      <param-value>WEB-INF/classes/log4j.properties</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  
+	<servlet>
+		<servlet-name>refrepository</servlet-name>
+		<servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
+		<init-param>
+			<param-name>com.sun.jersey.config.property.packages</param-name>
+			<param-value>org.sead.repositories.reference;org.codehaus.jackson.jaxrs</param-value>
+		</init-param>
+		<init-param>
+			<param-name>com.sun.jersey.api.json.POJOMappingFeature</param-name>
+			<param-value>true</param-value>
+		</init-param>
+		<!--init-param> <param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name> 
+			<param-value>org.sead.api.filter.CORSResponseFilter</param-value> </init-param -->
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>refrepository</servlet-name>
+		<url-pattern>/api/*</url-pattern>
+	</servlet-mapping>
+
+</web-app>
